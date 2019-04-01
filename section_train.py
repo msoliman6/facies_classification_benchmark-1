@@ -57,8 +57,7 @@ def train(args):
     split_train_val(args, per_val=args.per_val)
 
     current_time = datetime.now().strftime('%b%d_%H%M%S')
-    log_dir = os.path.join('runs', current_time +
-                           "_{}_{}".format(args.arch, args.loss))
+    log_dir = os.path.join('runs', current_time + f"_{args.arch}_{args.model_name}")
     writer = SummaryWriter(log_dir=log_dir)
     # Setup Augmentations
     if args.aug:
@@ -175,7 +174,7 @@ def train(args):
             gt = labels.detach().cpu().numpy()
             running_metrics.update(gt, pred)
 
-            loss = loss_fn(input=outputs, target=labels, weight=class_weights)
+            loss = loss_fn(input=outputs, target=labels, alpha=class_weights, gamma=None)
             loss_train += loss.item()
             loss.backward()
 
@@ -257,7 +256,7 @@ def train(args):
 
                     running_metrics_val.update(gt, pred)
 
-                    loss = loss_fn(input=outputs_val, target=labels_val)
+                    loss = loss_fn(input=outputs, target=labels, alpha=class_weights, gamma=None)
 
                     total_iteration_val = total_iteration_val + 1
 
@@ -356,6 +355,10 @@ if __name__ == '__main__':
                         help='Whether to use data augmentation.')
     parser.add_argument('--class_weights', nargs='?', type=bool, default=False,
                         help='Whether to use class weights to reduce the effect of class imbalance')
+    parser.add_argument('--gamma', nargs='?', type=int, default=None,
+                        help='Switch between cross entropy "0"  focal loss "2"')
+    parser.add_argument('--model_name', nargs='?', type=str, default=None,
+                        help='name to associate with the model')
 
     args = parser.parse_args()
     train(args)
